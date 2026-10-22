@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bar pricing calculator</title>
+<style>
+:root{--bg:#f1f3f5;--card:#fff;--ink:#16181d;--mut:#656b76;--line:#dde1e6;--acc:#8a5d0c;--accink:#fff;--soft:#f6ecd8;--field:#f7f8fa;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14161a;--card:#1d2026;--ink:#ecedf0;--mut:#9399a4;--line:#2d3139;--acc:#e3b862;--accink:#1c1503;--soft:#3a3016;--field:#15171b}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#14161a;--card:#1d2026;--ink:#ecedf0;--mut:#9399a4;--line:#2d3139;--acc:#e3b862;--accink:#1c1503;--soft:#3a3016;--field:#15171b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+[hidden]{display:none!important}
+.wrap{max-width:940px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:24px;line-height:1.2;margin:4px 0 2px;letter-spacing:-.01em}
+h2{font-size:16px;margin:0 0 10px}
+.mut{color:var(--mut)}.sm{font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+label{display:block;font-size:13px;color:var(--mut);flex:1;min-width:120px}
+input,select{display:block;width:100%;min-width:0;margin-top:3px;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:8px 9px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+button{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer}
+.ghost{color:var(--mut)}
+.tabs{display:flex;gap:6px;margin:12px 0}
+.tabs button{flex:1;padding:10px 6px;font-weight:600}
+.tabs button.on,.seg button.on{background:var(--acc);border-color:var(--acc);color:var(--accink)}
+.seg{display:flex;gap:6px;margin-bottom:10px}.seg button{flex:1}
+.chips{display:flex;gap:6px}.chips button{padding:8px 10px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:12px;font-weight:600;color:var(--mut);text-align:left;padding:4px}
+td{padding:5px 4px;vertical-align:middle}
+td input{margin:0;padding:7px 8px}
+.pn{display:flex;gap:6px;align-items:center;min-width:170px}
+.x{padding:6px 9px;color:var(--mut);flex:none}
+td.o{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.pr{font-weight:700;font-size:16px;color:var(--acc)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.st{background:var(--soft);border-radius:10px;padding:10px 12px}
+.st span{display:block;font-size:12px;color:var(--mut)}
+.st b{font-size:20px;font-variant-numeric:tabular-nums}
+.st.big b{color:var(--acc);font-size:24px}
+details{margin-top:8px}summary{cursor:pointer;font-weight:600}
+details li{margin:3px 0}
+#add{margin-top:8px;width:100%}
+@media(max-width:640px){
+ thead{display:none}
+ table,tbody{display:block}
+ tr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;margin-bottom:8px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+ td{display:block;padding:0;text-align:left!important}
+ td::before{content:attr(data-l);display:block;font-size:11px;color:var(--mut);font-weight:400}
+ td:first-child{grid-column:1/-1}
+ td:first-child::before{display:none}
+ .pn{min-width:0}
+ td.o{font-size:15px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Bar pricing calculator</h1>
+<p class="mut" style="margin:0">All amounts are in Zambian kwacha (K). Your entries are saved on this device.</p>
+
+<div class="card row">
+ <label>Round prices up to
+  <select id="round"><option value="0">No rounding</option><option value="0.5">K0.50</option><option value="1">K1</option><option value="5">K5</option><option value="10">K10</option></select>
+ </label>
+ <button id="reset" class="ghost">Reset everything</button>
+</div>
+
+<div class="tabs"><button data-t="p" class="on">Price list</button><button data-t="s">Per shot</button><button data-t="g">Profit target</button></div>
+
+<section id="p">
+ <div class="card">
+  <div class="seg"><button data-m="markup">Markup on cost</button><button data-m="margin">Target margin</button></div>
+  <div class="row">
+   <label>Default percentage<input id="pct" type="number" inputmode="decimal" step="any" min="0"></label>
+   <div class="chips"><button data-v="25">25%</button><button data-v="30">30%</button><button data-v="40">40%</button><button data-v="50">50%</button></div>
+  </div>
+  <p class="mut sm" id="hint" style="margin:10px 0 0"></p>
+ </div>
+ <div class="tw"><table>
+  <thead><tr><th>Product</th><th>Cost (K)</th><th>Extra (K)</th><th>Own %</th><th style="text-align:right">Price (K)</th><th style="text-align:right">Profit (K)</th><th style="text-align:right">Margin</th></tr></thead>
+  <tbody id="tb"></tbody>
+ </table></div>
+ <button id="add">Add product</button>
+ <p class="mut sm">Cost is the supplier price plus any extra cost per unit (breakages, fees). Leave Own % empty to use the default. Rent and wages are not included here; use the Profit target tab for those.</p>
+ <details class="card"><summary>Markups worth testing</summary>
+  <ul class="sm">
+   <li>Mainstream beers: 25–40%</li><li>Premium beers and ciders: 30–50%</li><li>Soft drinks and water: 40–70%</li>
+   <li>Standard spirits by the bottle: 25–40%</li><li>Premium spirits and champagne: 20–35%</li><li>Wine: 30–50%</li><li>Shisha supplies: 30–50%</li>
+  </ul>
+  <p class="mut sm" style="margin:0">These are starting points to test, not verified Zambian averages. Compare with nearby bars before you commit.</p>
+ </details>
+</section>
+
+<section id="s" hidden>
+ <div class="card">
+  <h2>Price a shot from a bottle</h2>
+  <div class="grid">
+   <label>Bottle cost (K)<input id="s-cost" type="number" inputmode="decimal" step="any" min="0"></label>
+   <label>Bottle size (ml)<input id="s-ml" type="number" inputmode="decimal" step="any" min="0"></label>
+   <label>Serving size (ml)<input id="s-srv" type="number" inputmode="decimal" step="any" min="0"></label>
+   <label>Extra cost per serving (K)<input id="s-ex" type="number" inputmode="decimal" step="any" min="0"></label>
+   <label>Wastage (%)<input id="s-waste" type="number" inputmode="decimal" step="any" min="0"></label>
+   <label>Target margin (%)<input id="s-mar" type="number" inputmode="decimal" step="any" min="0"></label>
+  </div>
+  <div class="stats">
+   <div class="st big"><span>Price per shot (K)</span><b id="o-sp">–</b></div>
+   <div class="st"><span>Cost per serving (K)</span><b id="o-cps">–</b></div>
+   <div class="st"><span>Servings you can sell</span><b id="o-sv">–</b></div>
+   <div class="st"><span>Actual margin</span><b id="o-sm">–</b></div>
+   <div class="st"><span>Sales per bottle (K)</span><b id="o-rev">–</b></div>
+   <div class="st"><span>Gross profit per bottle (K)</span><b id="o-gp">–</b></div>
+  </div>
+  <p class="mut sm" style="margin:10px 0 0">Wastage covers spillage and overpouring. Extra cost covers mixers and garnishes.</p>
+ </div>
+</section>
+
+<section id="g" hidden>
+ <div class="card">
+  <h2>How much gross profit do you need?</h2>
+  <div class="grid">
+   <label>Monthly profit target (K)<input id="t-profit" type="number" inputmode="decimal" step="any" min="0"></label>
+   <label>Monthly operating expenses (K)<input id="t-exp" type="number" inputmode="decimal" step="any" min="0"></label>
+   <label>Days open per month<input id="t-days" type="number" inputmode="decimal" step="any" min="1"></label>
+  </div>
+  <div class="stats">
+   <div class="st big"><span>Gross profit needed per day (K)</span><b id="o-day">–</b></div>
+   <div class="st"><span>Gross profit needed per month (K)</span><b id="o-mon">–</b></div>
+   <div class="st"><span>Average profit per item (K)</span><b id="o-avg">–</b></div>
+   <div class="st"><span>Items to sell per day</span><b id="o-items">–</b></div>
+  </div>
+  <p class="mut sm" style="margin:10px 0 0">Net profit = sales − cost of goods − operating expenses, so the gross profit you need is your profit target plus your expenses. Items per day uses the simple average profit across your price list, so treat it as a rough guide.</p>
+ </div>
+</section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id),KEY='barprice-v1';
+const base=[["Mosi",20],["Black Label",28],["Flying Fish",22],["Amarula 750ml",420],["Jameson",600],["Jack Daniel’s",730],["Chivas Regal 12 Years",840],["Coca-Cola 350ml",10],["Aquasavanna 500ml",4]];
+const def=()=>({rows:base.map(([n,c])=>({n,c,e:'',p:''})),m:'markup',pct:40,round:0,
+ shot:{cost:600,ml:750,srv:30,ex:0,waste:0,mar:50},t:{profit:10000,exp:6000,days:30}});
+function load(){try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&Array.isArray(j.rows)){const d=def();return{...d,...j,shot:{...d.shot,...j.shot},t:{...d.t,...j.t}}}}catch(e){}return def()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+let S=load();
+const n=v=>{const x=parseFloat(v);return isFinite(x)?x:0};
+const f=v=>isFinite(v)?v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'–';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const price=(c,m,p)=>{p/=100;return m==='markup'?c*(1+p):(p<1?c/(1-p):NaN)};
+const rnd=v=>{const s=n(S.round);return s>0&&isFinite(v)?Math.ceil(v/s-1e-9)*s:v};
+const pctTxt=v=>isFinite(v)&&v>0?v.toFixed(1)+'%':'–';
+
+function renderRows(){
+ const num='type="number" inputmode="decimal" step="any" min="0"';
+ $('tb').innerHTML=S.rows.map((r,i)=>`<tr data-i="${i}">
+ <td data-l="Product"><div class="pn"><input data-k="n" value="${esc(r.n)}" placeholder="Product name" aria-label="Product name"><button class="x" aria-label="Remove product" title="Remove">✕</button></div></td>
+ <td data-l="Cost (K)"><input data-k="c" ${num} value="${esc(r.c)}" aria-label="Cost"></td>
+ <td data-l="Extra (K)"><input data-k="e" ${num} value="${esc(r.e)}" placeholder="0" aria-label="Extra cost"></td>
+ <td data-l="Own %"><input data-k="p" ${num} value="${esc(r.p)}" placeholder="default" aria-label="Own percentage"></td>
+ <td data-l="Price (K)" class="o pr"></td><td data-l="Profit (K)" class="o pf"></td><td data-l="Margin" class="o mg"></td></tr>`).join('');
+ calc();
+}
+
+function calc(){
+ const pct=n(S.pct),mk=S.m==='markup';
+ document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',b.dataset.m===S.m));
+ $('hint').textContent=mk
+  ?`Price = cost × (1 + markup). A ${pct}% markup gives a ${(pct/(100+pct)*100).toFixed(1)}% gross margin.`
+  :`Price = cost ÷ (1 − margin). A ${pct}% margin needs a ${pct<100?(pct/(100-pct)*100).toFixed(1):'–'}% markup.`;
+ const profits=[],trs=$('tb').children;
+ S.rows.forEach((r,i)=>{
+  const tr=trs[i];if(!tr)return;
+  const c=n(r.c)+n(r.e),p=r.p===''?pct:n(r.p),pr=rnd(price(c,S.m,p)),pf=pr-c;
+  tr.querySelector('.pr').textContent=f(pr);
+  tr.querySelector('.pf').textContent=f(pf);
+  tr.querySelector('.mg').textContent=pctTxt(pr>0?pf/pr*100:NaN);
+  if(isFinite(pf)&&n(r.c)>0)profits.push(pf);
+ });
+ const h=S.shot,th=n(h.srv)>0?n(h.ml)/n(h.srv):0,sell=th*(1-n(h.waste)/100),
+  cps=sell>0?n(h.cost)/sell+n(h.ex):NaN,mar=n(h.mar)/100,sp=rnd(mar<1?cps/(1-mar):NaN),
+  rev=sp*sell,gp=rev-(n(h.cost)+n(h.ex)*sell);
+ $('o-sp').textContent=f(sp);$('o-cps').textContent=f(cps);
+ $('o-sv').textContent=sell>0?+sell.toFixed(2):'–';
+ $('o-sm').textContent=pctTxt(sp>0?(sp-cps)/sp*100:NaN);
+ $('o-rev').textContent=f(rev);$('o-gp').textContent=f(gp);
+ const t=S.t,need=n(t.profit)+n(t.exp),day=n(t.days)>0?need/n(t.days):NaN,
+  avg=profits.length?profits.reduce((a,b)=>a+b,0)/profits.length:NaN;
+ $('o-day').textContent=f(day);$('o-mon').textContent=f(need);$('o-avg').textContent=f(avg);
+ $('o-items').textContent=avg>0&&isFinite(day)?Math.ceil(day/avg):'–';
+ save();
+}
+
+function bind(id,o,k){const el=$(id);el.value=o[k];el.addEventListener('input',()=>{o[k]=el.value;calc()})}
+function bindAll(){
+ bind('pct',S,'pct');bind('round',S,'round');
+ [['cost'],['ml'],['srv'],['ex'],['waste'],['mar']].forEach(([k])=>bind('s-'+k,S.shot,k));
+ [['profit'],['exp'],['days']].forEach(([k])=>bind('t-'+k,S.t,k));
+}
+
+$('tb').addEventListener('input',e=>{
+ const k=e.target.dataset.k,tr=e.target.closest('tr');
+ if(!k||!tr)return;S.rows[tr.dataset.i][k]=e.target.value;calc();
+});
+$('tb').addEventListener('click',e=>{
+ if(!e.target.closest('.x'))return;
+ S.rows.splice(e.target.closest('tr').dataset.i,1);renderRows();
+});
+$('add').onclick=()=>{S.rows.push({n:'',c:'',e:'',p:''});renderRows();const i=$('tb').querySelectorAll('input[data-k="n"]');i[i.length-1].focus()};
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{S.m=b.dataset.m;calc()});
+document.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>{S.pct=b.dataset.v;$('pct').value=S.pct;calc()});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+ ['p','s','g'].forEach(id=>$(id).hidden=id!==b.dataset.t);
+});
+let armed=0;
+$('reset').onclick=()=>{
+ if(!armed){armed=1;$('reset').textContent='Tap again to reset';setTimeout(()=>{armed=0;$('reset').textContent='Reset everything'},3000);return}
+ armed=0;$('reset').textContent='Reset everything';S=def();bindAll();renderRows();
+};
+bindAll();renderRows();
+</script>
+</body>
+</html>
